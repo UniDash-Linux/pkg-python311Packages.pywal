@@ -1,70 +1,52 @@
 {
-  stdenv,
   lib,
-  makeWrapper,
-  bash,
+  python3Packages,
+  fetchFromGitHub,
+  fetchPypi,
 }:
 ############
 # Packages #
 #########################################################################
 let
-  iconPath = "icon.png";
-  name = "Exemple Application";
-  comment = "Exemple Application";
-in
-# --------------------------------------------------------------------- #
-stdenv.mkDerivation (finalAttrs: {
-  pname = "exemple";
-  version = "24.05-15-06-2024";
+  comment = "Python3 Hello World";
+  pname = "pip-hello-world";
+  version = "0.1";
+in python3Packages.buildPythonApplication rec {
   ## ----------------------------------------------------------------- ##
-  src = ./src; 
+  inherit pname version;
+  format = "pyproject";         # for not setup.py
+  dontUseCmakeConfigure = true; # for not setup.py
+  doCheck = false;
   ## ----------------------------------------------------------------- ##
-  nativeBuildInputs = [ makeWrapper ];
+  src = fetchPypi {
+    inherit pname version;
+    hash = "sha256-framXG712U7EWdZAP5Xz7dzEGkomaF7aoF7kX6sq5GU=";
+  };
   ## ----------------------------------------------------------------- ##
-  prePatch = ''
-    patchShebangs . ;
-
-    substituteInPlace exemple \
-      --replace-fail "exemple-2" "${placeholder "out"}/bin/exemple-2"
-  '';
+  # src = fetchFromGitHub {
+  #   owner = "pedrocunial";
+  #   repo = "pip-helloworld";
+  #   rev = version; # 7385eb989647509325d4f8f60e839ee699f5802a
+  #   sha256 = "";
+  # };
   ## ----------------------------------------------------------------- ##
-  installPhase = ''
-    runHook preInstall
-
-    mkdir -p $out/bin/ $out/Applications/
-    cp -r ./ $out/Applications/${finalAttrs.pname}/
-
-    install -Dm 755 ${finalAttrs.pname} $out/bin/${finalAttrs.pname}
-    install -Dm 755 exemple-2 $out/bin/exemple-2
-
-    echo -e "[Desktop Entry]\n" \
-      "Type=Application\n" \
-      "Name=${name}\n" \
-      "Comment=${comment}\n" \
-      "Icon=$out/Applications/${finalAttrs.pname}/${iconPath}\n" \
-      "Exec=$out/bin/${finalAttrs.pname}\n" \
-      "Terminal=false" > ./${finalAttrs.pname}.desktop
-
-    install -D ${finalAttrs.pname}.desktop \
-      $out/share/applications/${finalAttrs.pname}.desktop
-
-    runHook postInstall
-  '';
+  # nativeBuildInputs = [
+  # ];
+  #
+  # buildInputs = [
+  # ];
   ## ----------------------------------------------------------------- ##
-  postFixup = ''
-    wrapProgram $out/bin/exemple-2 \
-      --prefix PATH : ${lib.makeBinPath [
-        bash
-      ]}
-  '';
+  propagatedBuildInputs = with python3Packages; [
+    setuptools
+  ];
   ## ----------------------------------------------------------------- ##
-  meta = {
+  meta = with lib; {
     description = comment;
-    homepage = "https://github.com/RevoluNix/pkgs-template/";
-    maintainers = with lib.maintainers; [ pikatsuto ];
-    licenses = lib.licenses.lgpl2;
-    platforms = lib.platforms.linux;
-    mainProgram = finalAttrs.pname;
+    homepage = "https://github.com/RevoluNix/pkg-python311Package.template/";
+    license = licenses.lgpl2;
+    platforms = platforms.linux;
+    maintainers = with maintainers; [ pikatsuto ];
+    mainProgram = pname;
   };
   #######################################################################
-})
+}
